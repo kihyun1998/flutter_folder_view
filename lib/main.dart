@@ -172,37 +172,6 @@ class _TreeViewPageState extends State<TreeViewPage> {
       ),
       body: Column(
         children: [
-          // 상태 표시 패널
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16.0),
-            color: Colors.grey.shade100,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Enhanced TreeView Features:',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                const Text('✓ Horizontal & Vertical Scrolling'),
-                const Text('✓ Custom Overlay Scrollbars (hover to see)'),
-                const Text('✓ Dynamic Width Calculation'),
-                const Text('✓ Theme System with Multiple Presets'),
-                const Text('✓ Backward Compatible API'),
-                const SizedBox(height: 8),
-                Text(
-                  'Current: ${_getThemeName()} | Nodes: ${_getTotalNodeCount()}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontStyle: FontStyle.italic,
-                      ),
-                ),
-              ],
-            ),
-          ),
-
           // TreeView 영역
           Expanded(
             child: Container(
@@ -216,31 +185,6 @@ class _TreeViewPageState extends State<TreeViewPage> {
             ),
           ),
         ],
-      ),
-
-      // 하단 정보 패널
-      bottomNavigationBar: Container(
-        height: 60,
-        color: Colors.grey.shade50,
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Row(
-          children: [
-            const Icon(Icons.info_outline, size: 16),
-            const SizedBox(width: 8),
-            const Text('Try: '),
-            const Text(
-                'Expand folders • Double-click accounts • Right-click • Change themes'),
-            const Spacer(),
-            Text(
-              'Hover to see scrollbars',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
