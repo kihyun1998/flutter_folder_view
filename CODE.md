@@ -655,16 +655,15 @@ class TreeView extends StatefulWidget {
 }
 
 class _TreeViewState extends State<TreeView> {
-  // 각 노드의 확장 상태를 저장하는 맵
   final Map<String, bool> _expandedNodes = {};
 
-  // 레이아웃 상수들
-  static const double _arrowIconWidth = 20.0; // arrow icon의 고정 너비
+  static const double _arrowIconWidth = 20.0;
   static const double _iconSize = 20.0;
   static const double _iconSpacing = 8.0;
   static const double _horizontalPadding = 8.0;
   static const double _verticalPadding = 4.0;
   static const double _rightMargin = 8.0;
+  static const double _contentHorizontalPadding = 8.0; // 추가: 컨텐츠 내부 여유 공간
 
   @override
   void initState() {
@@ -716,7 +715,6 @@ class _TreeViewState extends State<TreeView> {
     return const SizedBox.shrink();
   }
 
-  // 확장 가능한 노드들을 위한 공통 레이아웃 빌더 (Folder, Node)
   Widget _buildExpandableItemLayout({
     required int depth,
     required Widget arrowIcon,
@@ -737,27 +735,23 @@ class _TreeViewState extends State<TreeView> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Arrow icon 영역 - hover/splash 효과 없음
             SizedBox(
               width: _arrowIconWidth,
               child: arrowIcon,
             ),
-            // 실제 컨텐츠 영역만 CustomInkwell로 감싸기
             CustomInkwell(
               onTap: onTap,
               borderRadius: BorderRadius.circular(4),
               child: Padding(
                 padding: EdgeInsets.symmetric(
                   vertical: widget.nodeSpacing,
-                  horizontal: 0,
+                  horizontal: _contentHorizontalPadding, // 수정: 추가 패딩
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Main icon
                     mainIcon,
                     SizedBox(width: _iconSpacing),
-                    // Text
                     Text(text, style: textStyle),
                   ],
                 ),
@@ -769,7 +763,6 @@ class _TreeViewState extends State<TreeView> {
     );
   }
 
-  // Account 전용 레이아웃 빌더
   Widget _buildAccountItemLayout({
     required int depth,
     required Widget mainIcon,
@@ -790,9 +783,7 @@ class _TreeViewState extends State<TreeView> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Arrow icon 영역 - 빈 공간, hover/splash 효과 없음
             const SizedBox(width: _arrowIconWidth),
-            // 실제 컨텐츠 영역만 CustomInkwell로 감싸기
             CustomInkwell(
               onDoubleTap: onDoubleTap,
               onRightClick: onRightClick,
@@ -800,15 +791,13 @@ class _TreeViewState extends State<TreeView> {
               child: Padding(
                 padding: EdgeInsets.symmetric(
                   vertical: widget.nodeSpacing,
-                  horizontal: 0,
+                  horizontal: _contentHorizontalPadding, // 수정: 추가 패딩
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Main icon
                     mainIcon,
                     SizedBox(width: _iconSpacing),
-                    // Text
                     Text(text, style: textStyle),
                   ],
                 ),
