@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_folder_view/widgets/custom_expansion_tile.dart';
 
 import '../../models/tree_node.dart';
 import '../custom_inkwell.dart';
@@ -97,36 +96,55 @@ class _TreeViewState extends State<TreeView> {
 
     return Padding(
       padding: EdgeInsets.only(left: indent),
-      child: CustomExpansionTile(
-        isExpanded: isExpanded,
-        spacing: widget.nodeSpacing,
-        leading: Icon(
-          Icons.keyboard_arrow_down,
-          size: 16,
-          color: Colors.grey.shade600,
-        ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isExpanded ? Icons.folder_open : Icons.folder,
-              color: Colors.amber.shade700,
-              size: 20,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 폴더 헤더를 Container로 감싸서 content-sized width 적용
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4),
+              color: Colors.transparent,
             ),
-            const SizedBox(width: 8),
-            Text(
-              folder.name,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
+            child: InkWell(
+              onTap: () => _toggleExpansion(folder.id),
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: widget.nodeSpacing),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min, // 핵심: 컨텐츠 크기에 맞춤
+                  children: [
+                    RotationTransition(
+                      turns: AlwaysStoppedAnimation(isExpanded ? 0.25 : 0.0),
+                      child: Icon(
+                        Icons.keyboard_arrow_right,
+                        size: 16,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      isExpanded ? Icons.folder_open : Icons.folder,
+                      color: Colors.amber.shade700,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      folder.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(width: 8), // 오른쪽 여백
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
-        children: children,
-        onExpansionChanged: (expanded) {
-          _toggleExpansion(folder.id);
-        },
+          ),
+          // 자식 노드들
+          if (isExpanded) ...children,
+        ],
       ),
     );
   }
@@ -142,36 +160,55 @@ class _TreeViewState extends State<TreeView> {
 
     return Padding(
       padding: EdgeInsets.only(left: indent),
-      child: CustomExpansionTile(
-        isExpanded: isExpanded,
-        spacing: widget.nodeSpacing,
-        leading: Icon(
-          Icons.keyboard_arrow_down,
-          size: 16,
-          color: Colors.grey.shade600,
-        ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isExpanded ? Icons.dns : Icons.storage,
-              color: Colors.blue.shade600,
-              size: 20,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 노드 헤더를 Container로 감싸서 content-sized width 적용
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4),
+              color: Colors.transparent,
             ),
-            const SizedBox(width: 8),
-            Text(
-              node.name,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
+            child: InkWell(
+              onTap: () => _toggleExpansion(node.id),
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: widget.nodeSpacing),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min, // 핵심: 컨텐츠 크기에 맞춤
+                  children: [
+                    RotationTransition(
+                      turns: AlwaysStoppedAnimation(isExpanded ? 0.25 : 0.0),
+                      child: Icon(
+                        Icons.keyboard_arrow_right,
+                        size: 16,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      isExpanded ? Icons.dns : Icons.storage,
+                      color: Colors.blue.shade600,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      node.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(width: 8), // 오른쪽 여백
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
-        children: children,
-        onExpansionChanged: (expanded) {
-          _toggleExpansion(node.id);
-        },
+          ),
+          // 자식 노드들
+          if (isExpanded) ...children,
+        ],
       ),
     );
   }
@@ -180,29 +217,37 @@ class _TreeViewState extends State<TreeView> {
   Widget _buildAccountItem(Account account, int depth, double indent) {
     return Padding(
       padding: EdgeInsets.only(left: indent),
-      child: CustomInkwell(
-        onDoubleTap: () => widget.onAccountDoubleClick?.call(account),
-        onRightClick: () => widget.onAccountRightClick?.call(account),
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: widget.nodeSpacing),
-          child: Row(
-            children: [
-              // chevron 아이콘 자리 (Account는 확장되지 않으므로 빈 공간)
-              const SizedBox(width: 16),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.account_circle,
-                color: Colors.green.shade600,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                account.name,
-                style: const TextStyle(
-                  fontSize: 14,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          color: Colors.transparent,
+        ),
+        child: CustomInkwell(
+          onDoubleTap: () => widget.onAccountDoubleClick?.call(account),
+          onRightClick: () => widget.onAccountRightClick?.call(account),
+          borderRadius: BorderRadius.circular(4),
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: widget.nodeSpacing),
+            child: Row(
+              mainAxisSize: MainAxisSize.min, // 핵심: 컨텐츠 크기에 맞춤
+              children: [
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.account_circle,
+                  color: Colors.green.shade600,
+                  size: 20,
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                Text(
+                  account.name,
+                  style: const TextStyle(
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(width: 8), // 오른쪽 여백
+              ],
+            ),
           ),
         ),
       ),
