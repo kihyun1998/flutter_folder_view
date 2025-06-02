@@ -303,7 +303,6 @@ class MockData {
     final nodeState1 = TreeNodeState.init();
     final nodeState2 = TreeNodeState.init();
     final nodeState3 = TreeNodeState.init();
-    final nodeState4 = TreeNodeState.init();
 
     // Account들 생성
     final account1 = Account(
@@ -330,17 +329,6 @@ class MockData {
       data: nodeState3,
     );
 
-    final account5 = Account(
-      id: 'acc_5',
-      name: 'test@domain.com',
-      data: nodeState4,
-    );
-    final account6 = Account(
-      id: 'acc_6',
-      name: 'test@domain.com',
-      data: nodeState4,
-    );
-
     // Node들 생성
     final node1 = Node(
       id: 'node_1',
@@ -360,13 +348,6 @@ class MockData {
       id: 'node_3',
       name: 'API Server',
       children: [account4],
-      data: nodeState3,
-    );
-
-    final node4 = Node(
-      id: 'node_4',
-      name: 'API Server',
-      children: [account5, account6],
       data: nodeState3,
     );
 
@@ -394,7 +375,7 @@ class MockData {
     );
 
     // 혼합된 루트 노드들 반환 (Folder와 Node 모두 루트에 올 수 있다고 가정)
-    return [folder1, folder2, node4];
+    return [folder1, folder2, node1];
   }
 
   // 더 복잡한 테스트 데이터

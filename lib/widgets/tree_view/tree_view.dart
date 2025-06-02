@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_folder_view/widgets/custom_expansion_tile.dart';
 
 import '../../models/tree_node.dart';
-import '../../models/tree_position.dart';
 import '../custom_inkwell.dart';
-import '../tree_guide_painter.dart';
 
 class TreeView extends StatefulWidget {
   final List<TreeNode> rootNodes;
@@ -12,8 +10,6 @@ class TreeView extends StatefulWidget {
   final Function(Account)? onAccountRightClick;
   final double indentSize;
   final double nodeSpacing;
-  final bool showGuideLines;
-  final Color guideLineColor;
 
   const TreeView({
     super.key,
@@ -22,8 +18,6 @@ class TreeView extends StatefulWidget {
     this.onAccountRightClick,
     this.indentSize = 24.0,
     this.nodeSpacing = 4.0,
-    this.showGuideLines = true,
-    this.guideLineColor = const Color(0xFFCCCCCC),
   });
 
   @override
@@ -59,43 +53,6 @@ class _TreeViewState extends State<TreeView> {
     });
   }
 
-  // 위치 정보 계산
-  TreePosition _calculatePosition({
-    required int depth,
-    required int siblingIndex,
-    required int totalSiblings,
-    required List<bool> parentLines,
-  }) {
-    final isLast = siblingIndex == totalSiblings - 1;
-    return TreePosition(
-      depth: depth,
-      isLast: isLast,
-      parentLines: List<bool>.from(parentLines),
-    );
-  }
-
-  // 자식들의 부모 라인 계산
-  List<bool> _calculateChildParentLines({
-    required List<bool> currentParentLines,
-    required bool isLastSibling,
-    required int currentDepth,
-  }) {
-    final newParentLines = List<bool>.from(currentParentLines);
-
-    // 현재 depth에 해당하는 위치에 세로선 필요 여부 설정
-    if (newParentLines.length <= currentDepth) {
-      // 리스트 크기 확장
-      while (newParentLines.length <= currentDepth) {
-        newParentLines.add(false);
-      }
-    }
-
-    // 현재 노드가 마지막이 아니면 세로선 필요
-    newParentLines[currentDepth] = !isLastSibling;
-
-    return newParentLines;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -106,50 +63,23 @@ class _TreeViewState extends State<TreeView> {
       child: ListView.builder(
         itemCount: widget.rootNodes.length,
         itemBuilder: (context, index) {
-          final position = _calculatePosition(
-            depth: 0,
-            siblingIndex: index,
-            totalSiblings: widget.rootNodes.length,
-            parentLines: [],
-          );
-          return _buildTreeNodeWithGuide(widget.rootNodes[index], position);
+          return _buildTreeNode(widget.rootNodes[index], 0);
         },
       ),
     );
   }
 
-  // 가이드라인과 함께 트리 노드 빌드
-  Widget _buildTreeNodeWithGuide(TreeNode node, TreePosition position) {
-    return Stack(
-      children: [
-        // 가이드라인 레이어
-        if (widget.showGuideLines)
-          Positioned.fill(
-            child: CustomPaint(
-              painter: TreeGuidePainter(
-                position: position,
-                indentSize: widget.indentSize,
-                lineColor: widget.guideLineColor,
-              ),
-            ),
-          ),
-        // 노드 콘텐츠
-        _buildTreeNode(node, position),
-      ],
-    );
-  }
-
-  // 재귀적으로 트리 노드를 빌드 (위치 정보 포함)
-  Widget _buildTreeNode(TreeNode node, TreePosition position) {
+  // 재귀적으로 트리 노드를 빌드
+  Widget _buildTreeNode(TreeNode node, int depth) {
     final isExpanded = _expandedNodes[node.id] ?? false;
-    final indent = widget.indentSize * position.depth;
+    final indent = widget.indentSize * depth;
 
     if (node is Folder) {
-      return _buildFolderNode(node, position, isExpanded, indent);
+      return _buildFolderNode(node, depth, isExpanded, indent);
     } else if (node is Node) {
-      return _buildNodeItem(node, position, isExpanded, indent);
+      return _buildNodeItem(node, depth, isExpanded, indent);
     } else if (node is Account) {
-      return _buildAccountItem(node, position, indent);
+      return _buildAccountItem(node, depth, indent);
     }
 
     return const SizedBox.shrink();
@@ -157,27 +87,13 @@ class _TreeViewState extends State<TreeView> {
 
   // 폴더 노드 빌드
   Widget _buildFolderNode(
-      Folder folder, TreePosition position, bool isExpanded, double indent) {
-    // 자식들의 부모 라인 계산
-    final childParentLines = _calculateChildParentLines(
-      currentParentLines: position.parentLines,
-      isLastSibling: position.isLast,
-      currentDepth: position.depth,
-    );
-
+      Folder folder, int depth, bool isExpanded, double indent) {
     final children = folder.children.isEmpty
         ? <Widget>[]
-        : folder.children.cast<TreeNode>().asMap().entries.map((entry) {
-            final childIndex = entry.key;
-            final child = entry.value;
-            final childPosition = _calculatePosition(
-              depth: position.depth + 1,
-              siblingIndex: childIndex,
-              totalSiblings: folder.children.length,
-              parentLines: childParentLines,
-            );
-            return _buildTreeNodeWithGuide(child, childPosition);
-          }).toList();
+        : folder.children
+            .cast<TreeNode>()
+            .map((child) => _buildTreeNode(child, depth + 1))
+            .toList();
 
     return Padding(
       padding: EdgeInsets.only(left: indent),
@@ -216,28 +132,13 @@ class _TreeViewState extends State<TreeView> {
   }
 
   // 노드 아이템 빌드
-  Widget _buildNodeItem(
-      Node node, TreePosition position, bool isExpanded, double indent) {
-    // 자식들의 부모 라인 계산
-    final childParentLines = _calculateChildParentLines(
-      currentParentLines: position.parentLines,
-      isLastSibling: position.isLast,
-      currentDepth: position.depth,
-    );
-
+  Widget _buildNodeItem(Node node, int depth, bool isExpanded, double indent) {
     final children = node.children.isEmpty
         ? <Widget>[]
-        : node.children.cast<TreeNode>().asMap().entries.map((entry) {
-            final childIndex = entry.key;
-            final child = entry.value;
-            final childPosition = _calculatePosition(
-              depth: position.depth + 1,
-              siblingIndex: childIndex,
-              totalSiblings: node.children.length,
-              parentLines: childParentLines,
-            );
-            return _buildTreeNodeWithGuide(child, childPosition);
-          }).toList();
+        : node.children
+            .cast<TreeNode>()
+            .map((child) => _buildTreeNode(child, depth + 1))
+            .toList();
 
     return Padding(
       padding: EdgeInsets.only(left: indent),
@@ -276,8 +177,7 @@ class _TreeViewState extends State<TreeView> {
   }
 
   // 계정 아이템 빌드 (리프 노드, 클릭 이벤트 있음)
-  Widget _buildAccountItem(
-      Account account, TreePosition position, double indent) {
+  Widget _buildAccountItem(Account account, int depth, double indent) {
     return Padding(
       padding: EdgeInsets.only(left: indent),
       child: CustomInkwell(
