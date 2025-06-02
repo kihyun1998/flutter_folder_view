@@ -630,7 +630,6 @@ class _CustomInkwellState extends State<CustomInkwell> {
 ## lib/widgets/tree_view/tree_view.dart
 ```dart
 import 'package:flutter/material.dart';
-import 'package:flutter_folder_view/widgets/custom_expansion_tile.dart';
 
 import '../../models/tree_node.dart';
 import '../custom_inkwell.dart';
@@ -659,13 +658,20 @@ class _TreeViewState extends State<TreeView> {
   // 각 노드의 확장 상태를 저장하는 맵
   final Map<String, bool> _expandedNodes = {};
 
+  // 레이아웃 상수들
+  static const double _arrowIconWidth = 20.0; // arrow icon의 고정 너비
+  static const double _iconSize = 20.0;
+  static const double _iconSpacing = 8.0;
+  static const double _horizontalPadding = 8.0;
+  static const double _verticalPadding = 4.0;
+  static const double _rightMargin = 8.0;
+
   @override
   void initState() {
     super.initState();
     _initializeExpandedStates(widget.rootNodes);
   }
 
-  // 모든 노드의 초기 확장 상태를 false로 설정
   void _initializeExpandedStates(List<TreeNode> nodes) {
     for (var node in nodes) {
       if (node is Folder || node is Node) {
@@ -677,7 +683,6 @@ class _TreeViewState extends State<TreeView> {
     }
   }
 
-  // 노드의 확장 상태 토글
   void _toggleExpansion(String nodeId) {
     setState(() {
       _expandedNodes[nodeId] = !(_expandedNodes[nodeId] ?? false);
@@ -700,25 +705,123 @@ class _TreeViewState extends State<TreeView> {
     );
   }
 
-  // 재귀적으로 트리 노드를 빌드
   Widget _buildTreeNode(TreeNode node, int depth) {
-    final isExpanded = _expandedNodes[node.id] ?? false;
-    final indent = widget.indentSize * depth;
-
     if (node is Folder) {
-      return _buildFolderNode(node, depth, isExpanded, indent);
+      return _buildFolderNode(node, depth);
     } else if (node is Node) {
-      return _buildNodeItem(node, depth, isExpanded, indent);
+      return _buildNodeItem(node, depth);
     } else if (node is Account) {
-      return _buildAccountItem(node, depth, indent);
+      return _buildAccountItem(node, depth);
     }
-
     return const SizedBox.shrink();
   }
 
-  // 폴더 노드 빌드
-  Widget _buildFolderNode(
-      Folder folder, int depth, bool isExpanded, double indent) {
+  // 확장 가능한 노드들을 위한 공통 레이아웃 빌더 (Folder, Node)
+  Widget _buildExpandableItemLayout({
+    required int depth,
+    required Widget arrowIcon,
+    required Widget mainIcon,
+    required String text,
+    required TextStyle textStyle,
+    VoidCallback? onTap,
+  }) {
+    final indent = widget.indentSize * depth;
+
+    return Padding(
+      padding: EdgeInsets.only(left: indent),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: _horizontalPadding,
+          vertical: _verticalPadding,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Arrow icon 영역 - hover/splash 효과 없음
+            SizedBox(
+              width: _arrowIconWidth,
+              child: arrowIcon,
+            ),
+            // 실제 컨텐츠 영역만 CustomInkwell로 감싸기
+            CustomInkwell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: widget.nodeSpacing,
+                  horizontal: 0,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Main icon
+                    mainIcon,
+                    SizedBox(width: _iconSpacing),
+                    // Text
+                    Text(text, style: textStyle),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Account 전용 레이아웃 빌더
+  Widget _buildAccountItemLayout({
+    required int depth,
+    required Widget mainIcon,
+    required String text,
+    required TextStyle textStyle,
+    VoidCallback? onDoubleTap,
+    VoidCallback? onRightClick,
+  }) {
+    final indent = widget.indentSize * depth;
+
+    return Padding(
+      padding: EdgeInsets.only(left: indent),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: _horizontalPadding,
+          vertical: _verticalPadding,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Arrow icon 영역 - 빈 공간, hover/splash 효과 없음
+            const SizedBox(width: _arrowIconWidth),
+            // 실제 컨텐츠 영역만 CustomInkwell로 감싸기
+            CustomInkwell(
+              onDoubleTap: onDoubleTap,
+              onRightClick: onRightClick,
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: widget.nodeSpacing,
+                  horizontal: 0,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Main icon
+                    mainIcon,
+                    SizedBox(width: _iconSpacing),
+                    // Text
+                    Text(text, style: textStyle),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFolderNode(Folder folder, int depth) {
+    final isExpanded = _expandedNodes[folder.id] ?? false;
     final children = folder.children.isEmpty
         ? <Widget>[]
         : folder.children
@@ -726,44 +829,38 @@ class _TreeViewState extends State<TreeView> {
             .map((child) => _buildTreeNode(child, depth + 1))
             .toList();
 
-    return Padding(
-      padding: EdgeInsets.only(left: indent),
-      child: CustomExpansionTile(
-        isExpanded: isExpanded,
-        spacing: widget.nodeSpacing,
-        leading: Icon(
-          Icons.keyboard_arrow_down,
-          size: 16,
-          color: Colors.grey.shade600,
-        ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isExpanded ? Icons.folder_open : Icons.folder,
-              color: Colors.amber.shade700,
-              size: 20,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildExpandableItemLayout(
+          depth: depth,
+          arrowIcon: RotationTransition(
+            turns: AlwaysStoppedAnimation(isExpanded ? 0.25 : 0.0),
+            child: Icon(
+              Icons.keyboard_arrow_right,
+              size: 16,
+              color: Colors.grey.shade600,
             ),
-            const SizedBox(width: 8),
-            Text(
-              folder.name,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
-            ),
-          ],
+          ),
+          mainIcon: Icon(
+            isExpanded ? Icons.folder_open : Icons.folder,
+            color: Colors.amber.shade700,
+            size: _iconSize,
+          ),
+          text: folder.name,
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+          ),
+          onTap: () => _toggleExpansion(folder.id),
         ),
-        children: children,
-        onExpansionChanged: (expanded) {
-          _toggleExpansion(folder.id);
-        },
-      ),
+        if (isExpanded) ...children,
+      ],
     );
   }
 
-  // 노드 아이템 빌드
-  Widget _buildNodeItem(Node node, int depth, bool isExpanded, double indent) {
+  Widget _buildNodeItem(Node node, int depth) {
+    final isExpanded = _expandedNodes[node.id] ?? false;
     final children = node.children.isEmpty
         ? <Widget>[]
         : node.children
@@ -771,72 +868,48 @@ class _TreeViewState extends State<TreeView> {
             .map((child) => _buildTreeNode(child, depth + 1))
             .toList();
 
-    return Padding(
-      padding: EdgeInsets.only(left: indent),
-      child: CustomExpansionTile(
-        isExpanded: isExpanded,
-        spacing: widget.nodeSpacing,
-        leading: Icon(
-          Icons.keyboard_arrow_down,
-          size: 16,
-          color: Colors.grey.shade600,
-        ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isExpanded ? Icons.dns : Icons.storage,
-              color: Colors.blue.shade600,
-              size: 20,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildExpandableItemLayout(
+          depth: depth,
+          arrowIcon: RotationTransition(
+            turns: AlwaysStoppedAnimation(isExpanded ? 0.25 : 0.0),
+            child: Icon(
+              Icons.keyboard_arrow_right,
+              size: 16,
+              color: Colors.grey.shade600,
             ),
-            const SizedBox(width: 8),
-            Text(
-              node.name,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
-            ),
-          ],
+          ),
+          mainIcon: Icon(
+            isExpanded ? Icons.dns : Icons.storage,
+            color: Colors.blue.shade600,
+            size: _iconSize,
+          ),
+          text: node.name,
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+          ),
+          onTap: () => _toggleExpansion(node.id),
         ),
-        children: children,
-        onExpansionChanged: (expanded) {
-          _toggleExpansion(node.id);
-        },
-      ),
+        if (isExpanded) ...children,
+      ],
     );
   }
 
-  // 계정 아이템 빌드 (리프 노드, 클릭 이벤트 있음)
-  Widget _buildAccountItem(Account account, int depth, double indent) {
-    return Padding(
-      padding: EdgeInsets.only(left: indent),
-      child: CustomInkwell(
-        onDoubleTap: () => widget.onAccountDoubleClick?.call(account),
-        onRightClick: () => widget.onAccountRightClick?.call(account),
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: widget.nodeSpacing),
-          child: Row(
-            children: [
-              // chevron 아이콘 자리 (Account는 확장되지 않으므로 빈 공간)
-              const SizedBox(width: 16),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.account_circle,
-                color: Colors.green.shade600,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                account.name,
-                style: const TextStyle(
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
+  Widget _buildAccountItem(Account account, int depth) {
+    return _buildAccountItemLayout(
+      depth: depth,
+      mainIcon: Icon(
+        Icons.account_circle,
+        color: Colors.green.shade600,
+        size: _iconSize,
       ),
+      text: account.name,
+      textStyle: const TextStyle(fontSize: 14),
+      onDoubleTap: () => widget.onAccountDoubleClick?.call(account),
+      onRightClick: () => widget.onAccountRightClick?.call(account),
     );
   }
 }
